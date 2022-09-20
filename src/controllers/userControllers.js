@@ -21,3 +21,5 @@ export const logout = (req, res) => {
 export const see = (req, res) => {
   res.send("SEE USER");
 };
+
+console.log("userRouter Hello!");
