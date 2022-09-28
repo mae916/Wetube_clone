@@ -1,4 +1,4 @@
-import Video from "../models/Video";
+import Video, { formatHashtags } from "../models/Video";
 
 export const home = async (req, res) => {
   const videos = await Video.find({});
@@ -8,22 +8,37 @@ export const home = async (req, res) => {
 export const watch = async (req, res) => {
   const { id } = req.params; //해당 페이지의 url에서 받아온(videoRouter.js) id로 DB를 불러 올 수 있음
   const video = await Video.findById(id);
-  if (video) {
-    //video가 있을 경우
-    return res.render("watch", { pageTitle: video.title, video });
+  if (!video) {
+    //video가 없는 경우
+    return res.render("404", { pageTitle: "Video not found" });
   }
-  //video가 없는 경우
-  return res.render("404", { pageTitle: "Video not found" });
+  //video가 있을 경우
+  return res.render("watch", { pageTitle: video.title, video });
 };
 
-export const getEdit = (req, res) => {
+export const getEdit = async (req, res) => {
   const { id } = req.params;
-  return res.render("edit", { pageTitle: `Editing: ` });
+  const video = await Video.findById(id);
+  if (!video) {
+    return res.render("404", { pageTitle: "Video not found" });
+  }
+  return res.render("edit", { pageTitle: `Edit: ${video.title}`, video });
 };
 
-export const postEdit = (req, res) => {
+export const postEdit = async (req, res) => {
   const { id } = req.params;
-  const title = req.body.title;
+  const { title, description, hashtags } = req.body;
+  const video = await Video.exists({ _id: id });
+  // hashtags : 요청 받아온 데이터
+  // video.hashtags : db에 저장된 데이터
+  if (!video) {
+    return res.render("404", { pageTitle: "Video not found" });
+  }
+  await Video.findByIdAndUpdate(id, {
+    title,
+    description,
+    hashtags: formatHashtags(hashtags),
+  });
   return res.redirect(`/videos/${id}`);
 };
 
@@ -37,7 +52,7 @@ export const postUpload = async (req, res) => {
     await Video.create({
       title,
       description,
-      hashtags: hashtags.split(",").map((word) => `#${word}`),
+      hashtags: formatHashtags(hashtags),
     });
     return res.redirect("/");
   } catch (error) {

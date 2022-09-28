@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+export const formatHashtags = (hashtags) =>
+  hashtags.split(",").map((word) => (word.startsWith("#") ? word : `#${word}`));
+
 const videoSchema = new mongoose.Schema({
   // 구체적으로 설정해줄수록 오류가 난 이유를 정확히 알 수 있음.
   title: { type: String, required: true, trim: true, maxLength: 80 },
