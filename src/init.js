@@ -1,6 +1,7 @@
 //필요한 모든 것 들을 초기화, import 시키는 역할을 하는 파일
 import "./db";
 import "./models/Video";
+import "./models/User";
 import app from "./server";
 
 const PORT = 4000;
