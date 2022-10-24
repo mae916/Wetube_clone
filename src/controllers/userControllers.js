@@ -1,4 +1,5 @@
 import User from "../models/User";
+import fetch from "node-fetch";
 import bcrypt from "bcrypt";
 
 export const getJoin = (req, res) => {
@@ -68,8 +69,56 @@ export const postLogin = async (req, res) => {
       errorMessage: "password가 일치하지 않습니다.",
     });
   }
-  console.log("로그인 완료!");
+  req.session.loggedIn = true; // 로그인 완료
+  req.session.user = user; // 유저가 로그인 하면 그 유저에 대한 정보를 세션에 담기
+
   return res.redirect("/");
+};
+
+export const startGithubLogin = (req, res) => {
+  const baseUrl = "https://github.com/login/oauth/authorize";
+  const config = {
+    client_id: process.env.GH_CLIENT,
+    allow_signup: false,
+    scope: "read:user user:email",
+  };
+  const params = new URLSearchParams(config).toString();
+  const finalUrl = `${baseUrl}?${params}`;
+  res.redirect(finalUrl);
+};
+
+export const finishGithubLogin = async (req, res) => {
+  const baseUrl = "https://github.com/login/oauth/access_token";
+  const config = {
+    client_id: process.env.GH_CLIENT,
+    client_secret: process.env.GH_SECRET,
+    code: req.query.code,
+  };
+  const params = new URLSearchParams(config).toString();
+  const finalUrl = `${baseUrl}?${params}`;
+  const tokenRequest = await (
+    await fetch(finalUrl, {
+      method: "POST",
+      headers: {
+        Accept: "application/json", //json으로 return 받기 위해 필요, 이걸 보내지 않으면 github이 text로 응답함.
+      },
+    })
+  ).json();
+  if ("access_token" in tokenRequest) {
+    //변수 in 객체
+    const { access_token } = tokenRequest; //json에서 access_token를 뽑아오고,
+    const userRequest = await (
+      await fetch("https://api.github.com/user", {
+        //토큰으로 API 접근해서
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    ).json(); //json 형식으로 user 정보 가져오기
+    console.log(userRequest);
+  } else {
+    return res.redirect("/login");
+  }
 };
 
 export const edit = (req, res) => {
