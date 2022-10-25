@@ -156,6 +156,68 @@ export const finishGithubLogin = async (req, res) => {
   }
 };
 
+export const startKakaoLogin = (req, res) => {
+  const baseUrl = "https://kauth.kakao.com/oauth/authorize";
+  const config = {
+    client_id: process.env.KAKAO_REST_API,
+    redirect_uri: process.env.KAKAO_REDIRECT,
+    response_type: "code",
+  };
+  const params = new URLSearchParams(config).toString();
+  const finishUrl = `${baseUrl}?${params}`;
+  res.redirect(finishUrl);
+};
+
+export const finishKakaoLogin = async (req, res) => {
+  const baseUrl = "https://kauth.kakao.com/oauth/token";
+  const config = {
+    grant_type: "authorization_code",
+    client_id: process.env.KAKAO_REST_API,
+    redirect_uri: process.env.KAKAO_REDIRECT,
+    code: req.query.code,
+  };
+  const params = new URLSearchParams(config).toString();
+  const finishUrl = `${baseUrl}?${params}`;
+  const contentType = "application/x-www-form-urlencoded;charset=utf-8";
+  const tokenRequest = await (
+    await fetch(finishUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": contentType,
+      },
+    })
+  ).json();
+  if ("access_token" in tokenRequest) {
+    const { access_token } = tokenRequest;
+    const userData = await (
+      await fetch("https://kapi.kakao.com/v2/user/me", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-type": contentType,
+        },
+      })
+    ).json();
+    console.log(userData);
+    let user = await User.findOne({ email: userData.kakao_account.email });
+    if (!user) {
+      user = await User.create({
+        email: userData.kakao_account.email,
+        avatarUrl: userData.properties.profile_image_url,
+        socialOnly: true,
+        username: userData.properties.nickname,
+        password: "",
+        name: userData.properties.nickname,
+        location: "",
+      });
+    }
+    req.session.loggedIn = true;
+    req.session.user = user;
+    return res.redirect("/");
+  } else {
+    return res.redirect("/login");
+  }
+};
+
 export const edit = (req, res) => {
   res.send("Edit User");
 };
