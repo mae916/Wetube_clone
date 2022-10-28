@@ -3,7 +3,7 @@ html(lang="ko")
         title #{pageTitle} | #{siteName}
         link(rel="stylesheet" href="https://unpkg.com/mvp.css")
         //- favicon.ico 오류로 코드추가
-        link(rel="shortcut icon" href="#") 
+
     body
         header
             h1=pageTitle
@@ -13,9 +13,11 @@ html(lang="ko")
                         a(href="/") Home
                     if loggedIn
                         li 
-                            a(href="/users/logout") Log Out
+                            a(href="/videos/upload") Upload Video
+                        li
+                            a(href="/users/edit") Edit Profile
                         li 
-                            a(href="/my-profile") #{loggedInUser.name}의 Profile
+                            a(href="/users/logout") Log Out
                     else
                         li 
                             a(href="/join") Join
@@ -23,8 +25,7 @@ html(lang="ko")
                             a(href="/login") Login
                     li 
                         a(href="/search") Search
-                    li 
-                        a(href="/videos/upload") Upload Video 
+                     
                     
         main
             block content
